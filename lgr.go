@@ -3,7 +3,6 @@
 package lgr
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,94 +15,130 @@ import (
 // debug and critical.
 type Level int
 
-type NotePad struct {
-	Handle io.Writer
-	Level  Level
-	Prefix string
-	Logger **log.Logger
+type LogType struct {
+	Level           Level
+	Prefix          string
+	FileLogger      *log.Logger
+	PrintLogger	    *log.Logger
+    color           *color.Color
+	Loggers         []log.Logger
+	PrintDebug      bool
 }
 
-// Feedback is special. It writes plainly to the output while
-// logging with the standard extra information (date, file, etc)
-// Only Println and Printf are currently provided for this
-type Feedback struct{}
-
 const (
-	LevelTrace Level = iota						// Excessive User Output
-	LevelDebug									// Detailed User Output
-	LevelInfo									// Elevated User Output
-	LevelMsg									// Standard User Output
-	LevelWarn									// Non-Critical Errors
-	LevelError									// Important Errors
-	LevelCritical								// Disrupting Errors
-	LevelFatal									// System destroying, flee the building errors
+    // LevelTrace Excessive User Output
+	LevelTrace Level = iota
+    // LevelDebug Detailed User Output
+	LevelDebug
+    // LevelInfo Elevated User Output
+	LevelInfo			
+    // LevelMsg Standard User Output
+	LevelMsg
+    // LevelWarn Non-Critical Errors
+	LevelWarn
+    // LevelError Important Errors
+	LevelError
+    // LevelCritical Disrupting Errors
+	LevelCritical
+    // LevelFatal System destroying, flee the building errors
+	LevelFatal
 	DefaultLogThreshold    = LevelInfo
 	DefaultStdoutThreshold = LevelMsg
 )
 
-
-
-var colorInfo = color.New(color.FgYellow).SprintFunc()
-var colorError = color.New(color.FgRed).SprintFunc()
-
 var (
-	TRACE      *log.Logger
-	DEBUG      *log.Logger
-	INFO       *log.Logger
-	MSG        *log.Logger
-	WARN       *log.Logger
-	ERROR      *log.Logger
-	CRITICAL   *log.Logger
-	FATAL      *log.Logger
-	LOG        *log.Logger // ?????
-	FEEDBACK   Feedback
-	LogHandle  io.Writer  = ioutil.Discard
-	OutHandle  io.Writer  = os.Stdout
-	BothHandle io.Writer  = io.MultiWriter(LogHandle, OutHandle)
-	NotePads   []*NotePad = []*NotePad{trace, debug, info, warn, err, critical, fatal}
-
-	trace           *NotePad = &NotePad{Level: LevelTrace, Handle: os.Stdout, Logger: &TRACE, Prefix: "TRACE: "}
-	debug           *NotePad = &NotePad{Level: LevelDebug, Handle: os.Stdout, Logger: &DEBUG, Prefix: "DEBUG: "}
-	info            *NotePad = &NotePad{Level: LevelInfo, Handle: os.Stdout, Logger: &INFO, Prefix: "INFO: "}
-	msg            *NotePad = &NotePad{Level: LevelMsg, Handle: os.Stdout, Logger: &MSG, Prefix: "MSG: "}
-	warn            *NotePad = &NotePad{Level: LevelWarn, Handle: os.Stdout, Logger: &WARN, Prefix: "WARN: "}
-	err             *NotePad = &NotePad{Level: LevelError, Handle: os.Stdout, Logger: &ERROR, Prefix: "ERROR: "}
-	critical        *NotePad = &NotePad{Level: LevelCritical, Handle: os.Stdout, Logger: &CRITICAL, Prefix: "CRITICAL: "}
-	fatal           *NotePad = &NotePad{Level: LevelFatal, Handle: os.Stdout, Logger: &FATAL, Prefix: "FATAL: "}
+	TRACE *LogType = &LogType{
+        Level: LevelTrace, 
+        Prefix: "TRACE: ",
+        color:  color.New(color.FgCyan),
+        PrintDebug: true,
+    }
+	DEBUG *LogType = &LogType{
+        Level: LevelDebug, 
+        Prefix: "DEBUG: ",
+        color:  color.New(color.FgMagenta),
+        PrintDebug: true,
+    }
+	INFO *LogType = &LogType{
+        Level: LevelInfo, 
+        Prefix: "INFO: ",
+        color:  color.New(color.FgBlue),
+        PrintDebug: false,
+    }
+	MSG *LogType = &LogType{
+        Level: LevelMsg, 
+        Prefix: "MSG: ",
+        color:  color.New(color.FgWhite),
+        PrintDebug: true,
+    }
+	WARN *LogType = &LogType{
+        Level: LevelWarn,
+        Prefix: "WARN: ",
+        color:  color.New(color.FgYellow).Add(color.Underline),
+        PrintDebug: true,
+    }
+	ERROR *LogType = &LogType{
+        Level: LevelError,
+        Prefix: "ERROR: ",
+        color:  color.New(color.FgRed),
+        PrintDebug: true,
+    }
+	CRITICAL *LogType = &LogType{
+        Level: LevelCritical,
+        Prefix: "CRITICAL: ",
+        color:  color.New(color.FgRed).Add(color.Underline),
+        PrintDebug: true,
+    }
+    // 
+	FATAL *LogType = &LogType{
+        Level: LevelFatal,
+        Prefix: "FATAL: ",
+        color:  color.New(color.FgRed).Add(color.Underline).Add(color.Bold),
+        PrintDebug: true,
+    }
 	logThreshold    Level    = DefaultLogThreshold
 	outputThreshold Level    = DefaultStdoutThreshold
+
+    // FileHandle is the handle for the log file to write to
+	FileHandle  io.Writer  = ioutil.Discard
+
+    LogTypes        []*LogType = []*LogType{TRACE, DEBUG, INFO, MSG, WARN, ERROR, CRITICAL, FATAL}
 )
 
+
+// init will setup the standard approach of providing the user
+// some feedback and logging a potentially different amount based on independent log and output thresholds.
+// By default the output has a lower threshold than logged
+// Don't use if you have manually set the Handles of the different levels as it will overwrite them.
 func init() {
 	SetStdoutThreshold(DefaultStdoutThreshold)
 }
 
-// initialize will setup the standard approach of providing the user
-// some feedback and logging a potentially different amount based on independent log and output thresholds.
-// By default the output has a lower threshold than logged
-// Don't use if you have manually set the Handles of the different levels as it will overwrite them.
-func initialize() {
-	BothHandle = io.MultiWriter(LogHandle, OutHandle)
-
-	for _, n := range NotePads {
+func refreshLogTypes(){
+	// see log flag constants
+	// https://golang.org/pkg/log/#pkg-constants
+	for _, n := range LogTypes {
+		n.FileLogger = log.New(FileHandle,n.Prefix, log.Ldate|log.Ltime|log.Lshortfile)
+        if n.PrintDebug {
+            n.PrintLogger = log.New(os.Stdout,n.Prefix,log.Ldate|log.Ltime|log.Lshortfile)
+        } else {
+            n.PrintLogger = log.New(os.Stdout,n.Prefix,0)
+        }
+		
 		if n.Level < outputThreshold && n.Level < logThreshold {
-			n.Handle = ioutil.Discard
+			n.Loggers = []log.Logger{}
 		} else if n.Level >= outputThreshold && n.Level >= logThreshold {
-			n.Handle = BothHandle
+			n.Loggers = []log.Logger{*n.FileLogger,*n.PrintLogger}
 		} else if n.Level >= outputThreshold && n.Level < logThreshold {
-			n.Handle = OutHandle
+			n.Loggers = []log.Logger{*n.PrintLogger}
 		} else {
-			n.Handle = LogHandle
+			n.Loggers = []log.Logger{*n.FileLogger}
 		}
 	}
 
-	for _, n := range NotePads {
-		*n.Logger = log.New(n.Handle, n.Prefix, log.Ldate|log.Ltime|log.Lshortfile)
-	}
-
-	LOG = log.New(LogHandle,
-		"LOG:   ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+	// for _, n := range LogTypes {
+	// 	*n.Logger = log.New(n.Handle, n.Prefix, log.Ldate|log.Ltime|log.Lshortfile)
+	// }
 }
 
 // LogThreshold returns the current global log threshold.
@@ -133,13 +168,13 @@ func levelCheck(level Level) Level {
 // SetLogThreshold Establishes a threshold where anything matching or above will be logged
 func SetLogThreshold(level Level) {
 	logThreshold = levelCheck(level)
-	initialize()
+	refreshLogTypes()
 }
 
 // SetStdoutThreshold Establishes a threshold where anything matching or above will be output
 func SetStdoutThreshold(level Level) {
 	outputThreshold = levelCheck(level)
-	initialize()
+	refreshLogTypes()
 }
 
 // SetLogFile Sets the Log Handle to an io.writer
@@ -154,8 +189,8 @@ func SetLogFile(path string) {
 
 	INFO.Println("Logging to", file.Name())
 
-	LogHandle = file
-	initialize()
+	FileHandle = file
+	refreshLogTypes()
 }
 
 // UseTempLogFile Creates a temporary file and sets the Log Handle to a io.writer created for it
@@ -167,30 +202,39 @@ func UseTempLogFile(prefix string) {
 
 	INFO.Println("Logging to", file.Name())
 
-	LogHandle = file
-	initialize()
+	FileHandle = file
+	refreshLogTypes()
 }
 
 // DiscardLogging Disables logging
 func DiscardLogging() {
-	LogHandle = ioutil.Discard
-	initialize()
-}
-
-// Println Feedback is special. It writes plainly to the output while
-// logging with the standard extra information (date, file, etc)
-// Only Println and Printf are currently provided for this
-func (fb *Feedback) Println(v ...interface{}) {
-	color.Set(color.FgRed)
-	fmt.Println(v...)
-	color.Unset() // Don't forget to unset
-	LOG.Println(v...)
+	FileHandle = ioutil.Discard
+	refreshLogTypes()
 }
 
 // Feedback is special. It writes plainly to the output while
 // logging with the standard extra information (date, file, etc)
 // Only Println and Printf are currently provided for this
-func (fb *Feedback) Printf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
-	LOG.Printf(format, v...)
+func (log *LogType) Print(v ...interface{}) {
+	log.color.Print(v...)
+	log.FileLogger.Print(v...)
 }
+
+// Feedback is special. It writes plainly to the output while
+// logging with the standard extra information (date, file, etc)
+// Only Println and Printf are currently provided for this
+func (log *LogType) Printf(format string, v ...interface{}) {
+	log.color.Printf(format,v...)
+	log.FileLogger.Printf(format,v...)
+}
+
+// Feedback is special. It writes plainly to the output while
+// logging with the standard extra information (date, file, etc)
+// Only Println and Printf are currently provided for this
+func (log *LogType) Println(v ...interface{}) {
+    log.color.Set()
+	log.PrintLogger.Println(v...)
+    color.Unset()
+	log.FileLogger.Println(v...)
+}
+

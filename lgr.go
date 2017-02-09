@@ -69,7 +69,7 @@ var (
         Level: LevelMsg, 
         Prefix: "MSG: ",
         color:  color.New(color.FgWhite),
-        PrintDebug: true,
+        PrintDebug: false,
     }
 	WARN *LogType = &LogType{
         Level: LevelWarn,
@@ -89,7 +89,6 @@ var (
         color:  color.New(color.FgRed).Add(color.Underline),
         PrintDebug: true,
     }
-    // 
 	FATAL *LogType = &LogType{
         Level: LevelFatal,
         Prefix: "FATAL: ",
@@ -100,7 +99,7 @@ var (
 	outputThreshold Level    = DefaultStdoutThreshold
 
     // FileHandle is the handle for the log file to write to
-	FileHandle  io.Writer  = ioutil.Discard
+	FileHandle      io.Writer  = ioutil.Discard
 
     LogTypes        []*LogType = []*LogType{TRACE, DEBUG, INFO, MSG, WARN, ERROR, CRITICAL, FATAL}
 )
@@ -114,24 +113,55 @@ func init() {
 	SetStdoutThreshold(DefaultStdoutThreshold)
 }
 
+type eWriterI interface {
+    Write(p []byte) (n int, err error)
+
+}
+
+type eWriter struct {
+    eWriterI
+    color *color.Color
+
+}
+
+// Write replacement function for io.writer
+func Write(bt []byte) (n int, err error) {
+    return 3,nil
+}
+
 func refreshLogTypes(){
 	// see log flag constants
 	// https://golang.org/pkg/log/#pkg-constants
 	for _, n := range LogTypes {
+
+        // this is an actual file on the filesystem to be logged to
 		n.FileLogger = log.New(FileHandle,n.Prefix, log.Ldate|log.Ltime|log.Lshortfile)
+        // this is a custom writer for the purpose of coloration
+        colorOut := eWriter{ color:  n.color }
+        
+        // this is output to the console - going to be displayed to the user - ideally colorized
+        // if the log level has PrintDebug set, the detailed log information will be included
         if n.PrintDebug {
-            n.PrintLogger = log.New(os.Stdout,n.Prefix,log.Ldate|log.Ltime|log.Lshortfile)
+            n.PrintLogger = log.New(colorOut,n.Prefix,log.Ldate|log.Ltime|log.Lshortfile)
         } else {
-            n.PrintLogger = log.New(os.Stdout,n.Prefix,0)
+            // else if not, it will be a plain message, with only the prefix (which can be blank at the log level)
+            n.PrintLogger = log.New(colorOut,n.Prefix,0)
         }
 		
+        // if the log level is less than the ouputThreshold (stdout)
+        // and less than logThreshold (file output)
+        // than don't log anything
 		if n.Level < outputThreshold && n.Level < logThreshold {
 			n.Loggers = []log.Logger{}
 		} else if n.Level >= outputThreshold && n.Level >= logThreshold {
+            // if greater than or equal to both, log to both
 			n.Loggers = []log.Logger{*n.FileLogger,*n.PrintLogger}
 		} else if n.Level >= outputThreshold && n.Level < logThreshold {
+            // if only outputThreshold is greater, only log to PrintLogger
 			n.Loggers = []log.Logger{*n.PrintLogger}
 		} else {
+            // else (the only option remaining is logThreshold is greater)
+            // log to FileLogger only
 			n.Loggers = []log.Logger{*n.FileLogger}
 		}
 	}

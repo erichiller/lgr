@@ -9,11 +9,9 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	
 )
 
 import "strings"
-// import "fmt"
 
 // Level describes the chosen log level between
 // debug and critical.
@@ -21,6 +19,7 @@ type Level int
 
 type LogType struct {
 	Level           Level
+    Name            string
 	Prefix          string
 	Handle          io.Writer
     Logger          **log.Logger
@@ -63,6 +62,7 @@ var (
 var (
 	Trace *LogType = &LogType{
         Level: LevelTrace, 
+        Name:   "TRACE",
         Prefix: "TRACE: ",
         color:  color.New(color.FgCyan),
         PrintDebug: true,
@@ -70,6 +70,7 @@ var (
     }
 	Debug *LogType = &LogType{
         Level: LevelDebug, 
+        Name:   "DEBUG",
         Prefix: "DEBUG: ",
         color:  color.New(color.FgMagenta),
         PrintDebug: true,
@@ -77,6 +78,7 @@ var (
     }
 	Info *LogType = &LogType{
         Level: LevelInfo, 
+        Name:   "INFO",
         Prefix: "INFO: ",
         color:  color.New(color.FgBlue),
         PrintDebug: false,
@@ -84,6 +86,7 @@ var (
     }
 	Msg *LogType = &LogType{
         Level: LevelMsg, 
+        Name:   "MSG",
         Prefix: "MSG: ",
         color:  color.New(color.FgWhite),
         PrintDebug: false,
@@ -91,6 +94,7 @@ var (
     }
 	Warn *LogType = &LogType{
         Level: LevelWarn,
+        Name:   "WARN",
         Prefix: "WARN: ",
         color:  color.New(color.FgYellow).Add(color.Underline),
         PrintDebug: true,
@@ -98,6 +102,7 @@ var (
     }
 	Error *LogType = &LogType{
         Level: LevelError,
+        Name:   "ERROR",
         Prefix: "ERROR: ",
         color:  color.New(color.FgRed),
         PrintDebug: true,
@@ -105,6 +110,7 @@ var (
     }
 	Critical *LogType = &LogType{
         Level: LevelCritical,
+        Name:   "CRITICAL",
         Prefix: "CRITICAL: ",
         color:  color.New(color.FgRed).Add(color.Underline),
         PrintDebug: true,
@@ -112,6 +118,7 @@ var (
     }
 	Fatal *LogType = &LogType{
         Level: LevelFatal,
+        Name:   "FATAL",
         Prefix: "FATAL: ",
         color:  color.New(color.FgRed).Add(color.Underline).Add(color.Bold),
         PrintDebug: true,
@@ -209,12 +216,14 @@ func levelCheck(level Level) Level {
 func SetLogThreshold(level Level) {
 	logThreshold = levelCheck(level)
 	refreshLogTypes()
+    INFO.Printf("SetLogThreshold(%+v/%+v)",level,logThreshold)
 }
 
 // SetStdoutThreshold Establishes a threshold where anything matching or above will be output
 func SetStdoutThreshold(level Level) {
 	outputThreshold = levelCheck(level)
 	refreshLogTypes()
+    INFO.Printf("SetStdoutThreshold(%+v/%+v)",level,outputThreshold)
 }
 
 // SetLogFile Sets the Log Handle to an io.writer
@@ -252,4 +261,22 @@ func DiscardLogging() {
 	refreshLogTypes()
 }
 
+// StringToLevel returns the level which has the name levelName
+func StringToLevel(levelName string) Level {
+    for _, n := range LogTypes {
+        if strings.ToLower(n.Name) == strings.ToLower(levelName) {
+            return n.Level
+        }
+    }
+    return DefaultLogThreshold
+}
+
+func LevelToString(level Level) string {
+    for _, n := range LogTypes {
+        if n.Level == level {
+            return n.Name
+        }
+    }
+    return "<unknown level name>"
+}
 

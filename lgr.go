@@ -223,7 +223,7 @@ func levelCheck(level Level) Level {
 }
 
 // SetLogFlags runs log.SetFlags on all of the log handles contained within LogTypes
-func SetLgrFlags(flags int) {
+func SetLogFlags(flags int) {
 	for _, n := range LogTypes {
         n.Flags = flags
     }

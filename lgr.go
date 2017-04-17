@@ -25,6 +25,7 @@ type LogType struct {
     Logger          **log.Logger
     color           *color.Color
 	PrintDebug      bool
+    Flags           int
 }
 
 const (
@@ -46,6 +47,7 @@ const (
 	LevelFatal
 	DefaultLogThreshold    = LevelInfo
 	DefaultStdoutThreshold = LevelMsg
+    DefaultFlags           = log.Ldate|log.Ltime|log.Lshortfile
 )
 
 var (
@@ -67,6 +69,7 @@ var (
         color:  color.New(color.FgCyan),
         PrintDebug: true,
         Logger: &TRACE,
+        Flags: DefaultFlags,
     }
 	Debug *LogType = &LogType{
         Level: LevelDebug, 
@@ -75,6 +78,7 @@ var (
         color:  color.New(color.FgMagenta),
         PrintDebug: true,
         Logger: &DEBUG,
+        Flags: DefaultFlags,
     }
 	Info *LogType = &LogType{
         Level: LevelInfo, 
@@ -83,6 +87,7 @@ var (
         color:  color.New(color.FgBlue),
         PrintDebug: false,
         Logger: &INFO,
+        Flags: DefaultFlags,
     }
 	Msg *LogType = &LogType{
         Level: LevelMsg, 
@@ -91,6 +96,7 @@ var (
         color:  color.New(color.FgWhite),
         PrintDebug: false,
         Logger: &MSG,
+        Flags: DefaultFlags,
     }
 	Warn *LogType = &LogType{
         Level: LevelWarn,
@@ -99,6 +105,7 @@ var (
         color:  color.New(color.FgYellow).Add(color.Underline),
         PrintDebug: true,
         Logger: &WARN,
+        Flags: DefaultFlags,
     }
 	Error *LogType = &LogType{
         Level: LevelError,
@@ -107,6 +114,7 @@ var (
         color:  color.New(color.FgRed),
         PrintDebug: true,
         Logger: &ERROR,
+        Flags: DefaultFlags,
     }
 	Critical *LogType = &LogType{
         Level: LevelCritical,
@@ -115,6 +123,7 @@ var (
         color:  color.New(color.FgRed).Add(color.Underline),
         PrintDebug: true,
         Logger: &CRITICAL,
+        Flags: DefaultFlags,
     }
 	Fatal *LogType = &LogType{
         Level: LevelFatal,
@@ -123,6 +132,7 @@ var (
         color:  color.New(color.FgRed).Add(color.Underline).Add(color.Bold),
         PrintDebug: true,
         Logger: &FATAL,
+        Flags: DefaultFlags,
     }
 	logThreshold    Level    = DefaultLogThreshold
 	outputThreshold Level    = DefaultStdoutThreshold
@@ -182,7 +192,7 @@ func refreshLogTypes(){
 			n.Handle = FileHandle
 		}
 
-        *n.Logger = log.New(n.Handle, n.Prefix, log.Ldate|log.Ltime|log.Lshortfile)
+        *n.Logger = log.New(n.Handle, n.Prefix, n.Flags)
 
 	}
 
@@ -210,6 +220,15 @@ func levelCheck(level Level) Level {
         default:
             return level
 	}
+}
+
+// SetLogFlags runs log.SetFlags on all of the log handles contained within LogTypes
+func SetLgrFlags(flags int) {
+	for _, n := range LogTypes {
+        n.Flags = flags
+    }
+	refreshLogTypes()
+    INFO.Printf("DefaultFlags(%+v)",flags)
 }
 
 // SetLogThreshold Establishes a threshold where anything matching or above will be logged

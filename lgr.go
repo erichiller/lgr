@@ -48,6 +48,9 @@ const (
 	DefaultStdoutThreshold = LevelMsg
 )
 
+// LOG LEVELS
+// these are the 8 logging levels listed in their intended order of urgency 
+// TRACE being for detailed reporting whereas FATAL is for _total_ failure
 var (
     TRACE *log.Logger
 	DEBUG *log.Logger
@@ -261,7 +264,15 @@ func DiscardLogging() {
 	refreshLogTypes()
 }
 
-// StringToLevel returns the level which has the name levelName
+// StringToLevel returns the level which has the name levelName: 
+// , TRACE 
+// , DEBUG 
+// , INFO 
+// , MSG 
+// , WARN 
+// , ERROR 
+// , CRITICAL 
+// , FATAL 
 func StringToLevel(levelName string) Level {
     for _, n := range LogTypes {
         if strings.ToLower(n.Name) == strings.ToLower(levelName) {
@@ -271,6 +282,7 @@ func StringToLevel(levelName string) Level {
     return DefaultLogThreshold
 }
 
+// LevelToString takes type level and converts it to a string readable representation
 func LevelToString(level Level) string {
     for _, n := range LogTypes {
         if n.Level == level {

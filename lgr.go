@@ -283,6 +283,36 @@ func DiscardLogging() {
 	refreshLogTypes()
 }
 
+// SetPrefix allows for changing the prefixes of ALL logs in lgr.
+func SetPrefix(prefix string){
+	for _, n := range LogTypes {
+        n.Prefix = prefix
+    }
+	refreshLogTypes()
+    INFO.Printf("NewPrefix(%+v)",prefix)
+}
+
+// SetPrefix allows for changing the prefix of a specific log.
+func (log *LogType) SetPrefix(prefix string){
+    log.Prefix = prefix
+    refreshLogTypes()
+}
+
+// AppendPrefix allows for appending to the prefixes of ALL lgr logs 
+func AppendPrefix(prefix string){
+	for _, n := range LogTypes {
+        n.Prefix = prefix + n.Prefix
+    }
+	refreshLogTypes()
+    INFO.Printf("NewPrefix(%+v)",prefix)
+}
+
+// AppendPrefix allows for appending to the prefix of a specific log.
+func (log *LogType) AppendPrefix(prefix string){
+    log.Prefix = prefix + log.Prefix
+    refreshLogTypes()
+}
+
 // StringToLevel returns the level which has the name levelName: 
 // , TRACE 
 // , DEBUG 

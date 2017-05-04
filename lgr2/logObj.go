@@ -42,6 +42,8 @@ type Output struct {
 
 var (
 	defaultOutputs = []Output{
+
+	}
 		
 
 

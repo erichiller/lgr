@@ -6,13 +6,13 @@ import "github.com/fatih/color"
 
 
 
-struct {
-	Writer_ConsoleColor()	io.Writer
+type ConsoleColorWriter struct {
+	Filter
 	color									*color.Color
 }
 
 
-func Writer_ConsoleColor(p []byte) (n int, err error)
-
+func (log *LoggerConfig) ConsoleColorWriter(p []byte) (n int, err error){
 
 }
+

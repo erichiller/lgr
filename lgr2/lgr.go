@@ -28,7 +28,7 @@ type LogType struct {
 }
 
 
-// Write acts a modifier pre-ouput for the logs.
+// Write acts a modifier pre-output for the logs.
 // Here we can add additional information (such the function the log is in)
 // or styling, such as coloration
 func (lt LogType) Write(p []byte) (n int, err error) {

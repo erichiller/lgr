@@ -44,6 +44,7 @@ var (
 	defaultOutputs = []Output{
 
 	}
+)
 		
 
 
@@ -107,6 +108,7 @@ func (lt LoggerConfig) Writer(p []byte) (n int, err error) {
 }
 
 func (lt LoggerConfig) Write(p []byte) (n int, err error) {
+}
 
 func refreshLoggerConfigs(){
 	// see log flag constants
@@ -138,7 +140,7 @@ func New() (logger LoggerConfig) {
 
 
 
-	logger.Writer = 
+	// logger.Writer = 
 }
 
 

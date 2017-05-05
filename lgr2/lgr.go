@@ -16,14 +16,14 @@ import "strings"
 // debug and critical.
 type Level int
 
-type LogType struct {
+type LoggerType struct {
 	Level           Level
 	Name            string
 	Prefix          string
 	Handle          io.Writer
 	Logger          **log.Logger
 	color           *color.Color
-	PrintDebug      bool
+	printDebug      bool
 	Flags           int
 }
 
@@ -31,7 +31,7 @@ type LogType struct {
 // Write acts a modifier pre-output for the logs.
 // Here we can add additional information (such the function the log is in)
 // or styling, such as coloration
-func (lt LogType) Write(p []byte) (n int, err error) {
+func (lt LoggerType) Write(p []byte) (n int, err error) {
 
 // NOTE:
 // THIS CURRENTLY ONLY IS DOING STDOUT!!
@@ -83,7 +83,7 @@ func (lt LogType) Write(p []byte) (n int, err error) {
 		msg = strs[5]
 	} 
 	// and now we can check if it should be colorized, etc.
-	if !lt.PrintDebug { 
+	if !lt.printDebug { 
 		lt.color.Print(msg)
 	} else {
 		lt.color.Print(str)
@@ -98,29 +98,29 @@ func (lt LogType) Write(p []byte) (n int, err error) {
 // Don't use if you have manually set the Handles of the different levels as it will overwrite them.
 func init() {
 	SetStdoutThreshold(DefaultStdoutThreshold)
-	SetLogThreshold(DefaultStdoutThreshold)
+	SetLoggerThreshold(DefaultStdoutThreshold)
 	
 }
 
 
-func refreshLogTypes(){
+func refreshLoggerTypes(){
 	// see log flag constants
 	// https://golang.org/pkg/log/#pkg-constants
-	for _, n := range LogTypes {
+	for _, n := range LoggerTypes {
 	
 		// if the log level is less than the outputThreshold (stdout)
-		// and less than logThreshold (file output)
+		// and less than LoggerThreshold (file output)
 		// than don't log anything
-		if n.Level < outputThreshold && n.Level < logThreshold {
+		if n.Level < outputThreshold && n.Level < LoggerThreshold {
 			n.Handle = ioutil.Discard
-		} else if n.Level >= outputThreshold && n.Level >= logThreshold {
+		} else if n.Level >= outputThreshold && n.Level >= LoggerThreshold {
 			// if greater than or equal to both, log to both
 			n.Handle = io.MultiWriter(FileHandle, n)
-		} else if n.Level >= outputThreshold && n.Level < logThreshold {
+		} else if n.Level >= outputThreshold && n.Level < LoggerThreshold {
 			// if only outputThreshold is greater, only log to console
 			n.Handle = n
 		} else {
-			// else (the only option remaining is logThreshold is greater)
+			// else (the only option remaining is LoggerThreshold is greater)
 			// log to FileLogger only
 			n.Handle = FileHandle
 		}
@@ -131,10 +131,10 @@ func refreshLogTypes(){
 
 }
 
-// LogThreshold returns the current global log threshold.
+// LoggerThreshold returns the current global log threshold.
 // Level is the current Log Level ( file output level )
-func LogThreshold() Level {
-	return logThreshold
+func LoggerThreshold() Level {
+	return LoggerThreshold
 }
 
 // StdoutThreshold returns the current global output threshold.
@@ -155,26 +155,26 @@ func levelCheck(level Level) Level {
 	}
 }
 
-// SetLogFlags runs log.SetFlags on all of the log handles contained within LogTypes
+// SetLogFlags runs log.SetFlags on all of the log handles contained within LoggerTypes
 func SetLogFlags(flags int) {
-	for _, n := range LogTypes {
+	for _, n := range LoggerTypes {
 		n.Flags = flags
 	}
-	refreshLogTypes()
+	refreshLoggerTypes()
 	INFO.Printf("DefaultFlags(%+v)",flags)
 }
 
-// SetLogThreshold Establishes a threshold where anything matching or above will be logged
-func SetLogThreshold(level Level) {
-	logThreshold = levelCheck(level)
-	refreshLogTypes()
-	INFO.Printf("SetLogThreshold(%+v/%+v)",level,logThreshold)
+// SetLoggerThreshold Establishes a threshold where anything matching or above will be logged
+func SetLoggerThreshold(level Level) {
+	LoggerThreshold = levelCheck(level)
+	refreshLoggerTypes()
+	INFO.Printf("SetLoggerThreshold(%+v/%+v)",level,LoggerThreshold)
 }
 
 // SetStdoutThreshold Establishes a threshold where anything matching or above will be output
 func SetStdoutThreshold(level Level) {
 	outputThreshold = levelCheck(level)
-	refreshLogTypes()
+	refreshLoggerTypes()
 	INFO.Printf("SetStdoutThreshold(%+v/%+v)",level,outputThreshold)
 }
 
@@ -191,17 +191,17 @@ func SetStdoutThreshold(level Level) {
 // , CRITICAL 
 // , FATAL 
 func StringToLevel(levelName string) Level {
-	for _, n := range LogTypes {
+	for _, n := range LoggerTypes {
 		if strings.ToLower(n.Name) == strings.ToLower(levelName) {
 			return n.Level
 		}
 	}
-	return DefaultLogThreshold
+	return DefaultLoggerThreshold
 }
 
 // LevelToString takes type level and converts it to a string readable representation
 func LevelToString(level Level) string {
-	for _, n := range LogTypes {
+	for _, n := range LoggerTypes {
 		if n.Level == level {
 			return n.Name
 		}

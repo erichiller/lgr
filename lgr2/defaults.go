@@ -1,26 +1,34 @@
-package lgr2
+package lgr
+
+import "log"
+import "io"
+import "io/ioutil"
+import "github.com/fatih/color"
 
 
+// these are the numeric values used to define levels
+// the actual Loggers fall into these levels,
+// and are defined in their LoggerT s
 const (
     // LevelTrace Excessive User Output
-	LevelTrace Level = iota
+	levelTrace Level = iota
     // LevelDebug Detailed User Output
-	LevelDebug
+	levelDebug
     // LevelInfo Elevated User Output
-	LevelInfo			
+	levelInfo			
     // LevelMsg Standard User Output
-	LevelMsg
+	levelMsg
     // LevelWarn Non-Critical Errors
-	LevelWarn
+	levelWarn
     // LevelError Important Errors
-	LevelError
+	levelError
     // LevelCritical Disrupting Errors
-	LevelCritical
+	levelCritical
     // LevelFatal System destroying, flee the building errors
-	LevelFatal
-	DefaultLogThreshold    = LevelInfo
-	DefaultStdoutThreshold = LevelMsg
-	DefaultFlags           = log.Ldate|log.Ltime|log.Lshortfile
+	levelFatal
+	defaultLogThreshold    = levelInfo
+	defaultStdoutThreshold = levelMsg
+	defaultFlags           = log.Ldate|log.Ltime|log.Lshortfile
 )
 
 // LOG LEVELS
@@ -35,86 +43,116 @@ var (
 	ERROR *log.Logger
 	CRITICAL *log.Logger
 	FATAL *log.Logger
-)
 
-var (
-	Trace *LogType = &LogType{
-        Level: LevelTrace, 
-        Name:   "TRACE",
-        Prefix: "TRACE: ",
-        color:  color.New(color.FgCyan),
-        PrintDebug: true,
-        Logger: &TRACE,
-        Flags: DefaultFlags,
-    }
-	Debug *LogType = &LogType{
-        Level: LevelDebug, 
-        Name:   "DEBUG",
-        Prefix: "DEBUG: ",
-        color:  color.New(color.FgMagenta),
-        PrintDebug: true,
-        Logger: &DEBUG,
-        Flags: DefaultFlags,
-    }
-	Info *LogType = &LogType{
-        Level: LevelInfo, 
-        Name:   "INFO",
-        Prefix: "INFO: ",
-        color:  color.New(color.FgBlue),
-        PrintDebug: false,
-        Logger: &INFO,
-        Flags: DefaultFlags,
-    }
-	Msg *LogType = &LogType{
-        Level: LevelMsg, 
-        Name:   "MSG",
-        Prefix: "MSG: ",
-        color:  color.New(color.FgWhite),
-        PrintDebug: false,
-        Logger: &MSG,
-        Flags: DefaultFlags,
-    }
-	Warn *LogType = &LogType{
-        Level: LevelWarn,
-        Name:   "WARN",
-        Prefix: "WARN: ",
-        color:  color.New(color.FgYellow).Add(color.Underline),
-        PrintDebug: true,
-        Logger: &WARN,
-        Flags: DefaultFlags,
-    }
-	Error *LogType = &LogType{
-        Level: LevelError,
-        Name:   "ERROR",
-        Prefix: "ERROR: ",
-        color:  color.New(color.FgRed),
-        PrintDebug: true,
-        Logger: &ERROR,
-        Flags: DefaultFlags,
-    }
-	Critical *LogType = &LogType{
-        Level: LevelCritical,
-        Name:   "CRITICAL",
-        Prefix: "CRITICAL: ",
-        color:  color.New(color.FgRed).Add(color.Underline),
-        PrintDebug: true,
-        Logger: &CRITICAL,
-        Flags: DefaultFlags,
-    }
-	Fatal *LogType = &LogType{
-        Level: LevelFatal,
-        Name:   "FATAL",
-        Prefix: "FATAL: ",
-        color:  color.New(color.FgRed).Add(color.Underline).Add(color.Bold),
-        PrintDebug: true,
-        Logger: &FATAL,
-        Flags: DefaultFlags,
-    }
-	logThreshold    Level    = DefaultLogThreshold
-	outputThreshold Level    = DefaultStdoutThreshold
+	// don't export these, they should be set 
+	logThreshold    Level    = defaultLogThreshold
+	outputThreshold Level    = defaultStdoutThreshold
 
 	// FileHandle is the handle for the log file to write to
-	FileHandle      io.Writer  = ioutil.Discard
+	fileHandle        = ioutil.Discard
 
-	LogTypes        []*LogType = []*LogType{Trace, Debug, Info, Msg, Warn, Error, Critical, Fatal}
+	// default Outputs to write to
+	// Outputs should shadow (aka implement io.Writer)
+	defaultOutputs = []io.Writer{
+		fileHandle,
+	}
+	
+	defaultPrefixName = true
+	defaultPrefix PrefixList = nil
+
 )
+
+var defaultLog = Log{
+	TRACE: &LoggerT{
+        Level: levelTrace, 
+        Name:   "TRACE",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgCyan),
+        printDebug: true,
+        Logger: &TRACE,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	DEBUG: &LoggerT{
+        Level: levelDebug, 
+        Name:   "DEBUG",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgMagenta),
+        printDebug: true,
+        Logger: &DEBUG,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	INFO: &LoggerT{
+        Level: levelInfo, 
+        Name:   "INFO",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgBlue),
+        printDebug: false,
+        Logger: &INFO,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	MSG: &LoggerT{
+        Level: levelMsg, 
+        Name:   "MSG",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgWhite),
+        printDebug: false,
+        Logger: &MSG,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	WARN: &LoggerT{
+        Level: levelWarn,
+        Name:   "WARN",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgYellow).Add(color.Underline),
+        printDebug: true,
+        Logger: &WARN,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	ERROR: &LoggerT{
+        Level: levelError,
+        Name:   "ERROR",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgRed),
+        printDebug: true,
+        Logger: &ERROR,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	CRITICAL: &LoggerT{
+        Level: levelCritical,
+        Name:   "CRITICAL",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgRed).Add(color.Underline),
+        printDebug: true,
+        Logger: &CRITICAL,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+	FATAL: &LoggerT{
+        Level: levelFatal,
+        Name:   "FATAL",
+		PrefixName: defaultPrefixName,
+        Prefix: defaultPrefix,
+        color:  color.New(color.FgRed).Add(color.Underline).Add(color.Bold),
+        printDebug: true,
+        Logger: &FATAL,
+        Flags: defaultFlags,
+        Outputs: defaultOutputs,
+    },
+}
+
+func init(){
+	NewLogger(defaultLog)
+}

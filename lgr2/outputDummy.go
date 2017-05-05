@@ -1,9 +1,11 @@
+package lgr
 
+import "ioutil"
 
 
 type DiscardOutput struct {
-	fileHandle		os.File
 	Output
+	fileHandle		os.File
 }
 
 

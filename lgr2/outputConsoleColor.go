@@ -28,29 +28,29 @@ func (output Output) ConsoleColorWriter(p []byte) (n int, err error) {
 
 
 
-		// split the received message on colons
-		var str string = string(p[:])
-		var strs []string = strings.SplitN(str,":",6)
-		var msg string = str
-		// the first 5 of which are time, etc in a normal message
-		if len(strs) >= 6 {
-				// but the 6th is the message type, ie. DEBUG
-				// which can be used to map back to the logger
-				msg = strs[5]
-		} 
-		// and now we can check if it should be colorized, etc.
-		if !lt.PrintDebug { 
-				lt.color.Print(msg)
-		} else {
-				lt.color.Print(str)
-		}
-		return len(p), nil
+	// split the received message on colons
+	var str string = string(p[:])
+	var strs []string = strings.SplitN(str,":",6)
+	var msg string = str
+	// the first 5 of which are time, etc in a normal message
+	if len(strs) >= 6 {
+			// but the 6th is the message type, ie. DEBUG
+			// which can be used to map back to the logger
+			msg = strs[5]
+	} 
+	// and now we can check if it should be colorized, etc.
+	if !lt.printDebug { 
+			lt.color.Print(msg)
+	} else {
+			lt.color.Print(str)
+	}
+	return len(p), nil
 }
 
 func (output *Output) SetFilters(filters []Filters){
 	//set filters only for this Output
 }
 
-func (log *LoggerConfig) SetFilters(filters []Filters){
+func (log *LoggerT) SetFilters(filters []Filters){
 	//set filters for all Writers
 }

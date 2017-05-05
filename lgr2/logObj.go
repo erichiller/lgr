@@ -1,78 +1,97 @@
 package lgr
 
-import (
-	"image/color"
-	"io"
-	"log"
-)
 
+import "io"
+import "log"
 
-type LoggerConfigI interface {
+import "github.com/fatih/color"
+
+type LogI interface {
 	GetFilters() []Filters
 }
 
-type LoggerConfig struct {
-	Level Level
-	Name  string
-	//Prefix     string
-	Prefix           []interface{}
+type LoggerT struct {
+	Level            Level
+	Name             string
+	Prefix           PrefixList
+	PrefixName       bool
 	Writer           *io.Writer				// Writer is a pointer to a Writer that already exists in Output .Writer
 	Logger           **log.Logger
 	color            *color.Color
-	PrintDebug       bool
+	printDebug       bool					// this is for internal debugging of lgr.
 	Flags            int
-	BlockFilters     Filters
+	Outputs          []OutputI
+	AllowableFilters Filters
 	HighlightFilters Filters
 }
+
+type PrefixList []interface{}
 
 type Filters []Filter
 
 type Filter struct {
 	Keywords	[]string
-	Level			int
+	Level		int
 }
 
+type Log map[*log.Logger]*LoggerT
 
 
-// defaults // move these //
+func NewLog(log Log){
+	for _, n := range log {
+			
+		// if the log level is less than the outputThreshold (stdout)
+		// and less than LoggerThreshold (file output)
+		// than don't log anything
+		if n.Level < outputThreshold && n.Level < LoggerThreshold {
+			n.Handle = ioutil.Discard
+		} else if n.Level >= outputThreshold && n.Level >= LoggerThreshold {
+			// if greater than or equal to both, log to both
+			n.Handle = io.MultiWriter(FileHandle, n)
+		} else if n.Level >= outputThreshold && n.Level < LoggerThreshold {
+			// if only outputThreshold is greater, only log to console
+			n.Handle = n
+		} else {
+			// else (the only option remaining is LoggerThreshold is greater)
+			// log to FileLogger only
+			n.Handle = FileHandle
+		}
 
-var (
-	defaultOutputs = []Output{
-
+		*n.Logger = log.New(n.Handle, n.Prefix, n.Flags)
 	}
-)
+}
 		
 
 // SetPrefix allows for changing the prefixes of ALL logs in lgr.
 func SetPrefix(prefix string){
-	for _, n := range LogTypes {
+	for _, n := range LoggerTs {
         n.Prefix = prefix
     }
-	refreshLogTypes()
+	refreshLoggerTs()
     INFO.Printf("NewPrefix(%+v)",prefix)
 }
-
-
+//                             50c  |                       |        |                    |
+//<time> <filename.ext>(30char, left) line ##(4 char, left) (pid,ppid)MESSAGE_TYPE(8, left) function() ?****EVENT**** message ?Value
 
 // SetPrefix allows for changing the prefix of a specific log.
-func (log *LogType) SetPrefix(prefix string){
+func (log *LoggerT) SetPrefix(prefix string){
     log.Prefix = prefix
-    refreshLogTypes()
+    refreshLoggerTs()
 }
 
 // AppendPrefix allows for appending to the prefixes of ALL lgr logs 
 func AppendPrefix(prefix string){
-	for _, n := range LogTypes {
+	for _, n := range LoggerTs {
         n.Prefix = prefix + n.Prefix
     }
-	refreshLogTypes()
+	refreshLoggerTs()
     INFO.Printf("NewPrefix(%+v)",prefix)
 }
 
 // AppendPrefix allows for appending to the prefix of a specific log.
-func (log *LogType) AppendPrefix(prefix string){
+func (log *LoggerT) AppendPrefix(prefix string){
     log.Prefix = prefix + log.Prefix
-    refreshLogTypes()
+    refreshLoggerTs()
 }
 
 //Filter lets you add Terms to the Filter
@@ -80,24 +99,24 @@ func (log *lgr) Filter() {
 
 }
 
-func refreshLoggerConfigs(){
+func refreshLoggerTs(){
 	// see log flag constants
 	// https://golang.org/pkg/log/#pkg-constants
-	for _, n := range LoggerConfigs {
+	for _, n := range LoggerTs {
 				
 				// if the log level is less than the outputThreshold (stdout)
-				// and less than logThreshold (file output)
+				// and less than LoggerThreshold (file output)
 				// than don't log anything
-		if n.Level < outputThreshold && n.Level < logThreshold {
+		if n.Level < outputThreshold && n.Level < LoggerThreshold {
 			n.Handle = ioutil.Discard
-		} else if n.Level >= outputThreshold && n.Level >= logThreshold {
+		} else if n.Level >= outputThreshold && n.Level >= LoggerThreshold {
 			// if greater than or equal to both, log to both
 			n.Handle = io.MultiWriter(FileHandle, n)
-		} else if n.Level >= outputThreshold && n.Level < logThreshold {
+		} else if n.Level >= outputThreshold && n.Level < LoggerThreshold {
 			// if only outputThreshold is greater, only log to console
 			n.Handle = n
 		} else {
-			// else (the only option remaining is logThreshold is greater)
+			// else (the only option remaining is LoggerThreshold is greater)
 			// log to FileLogger only
 			n.Handle = FileHandle
 		}
@@ -106,7 +125,7 @@ func refreshLoggerConfigs(){
 }
 
 
-func New() (logger LoggerConfig) {
+func New() (logger LoggerT) {
 
 
 

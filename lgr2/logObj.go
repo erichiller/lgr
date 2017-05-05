@@ -40,6 +40,7 @@ var (
 	defaultOutputs = []Output{
 
 	}
+)
 		
 
 // SetPrefix allows for changing the prefixes of ALL logs in lgr.
@@ -79,7 +80,6 @@ func (log *lgr) Filter() {
 
 }
 
-
 func refreshLoggerConfigs(){
 	// see log flag constants
 	// https://golang.org/pkg/log/#pkg-constants
@@ -110,7 +110,7 @@ func New() (logger LoggerConfig) {
 
 
 
-	logger.Writer = 
+	// logger.Writer = 
 }
 
 

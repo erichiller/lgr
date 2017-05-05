@@ -6,20 +6,15 @@ import "github.com/fatih/color"
 
 
 
-type ConsoleColorWriter struct {
-	Filter
+type ConsoleColorOutput struct {
+	Output
 	color									*color.Color
 }
 
-
-func (log *LoggerConfig) ConsoleColorWriter(p []byte) (n int, err error){
-
-}
-
-// Writer acts as a modifier pre-output for the logs.
+// ConsoleColorWriter acts as a modifier pre-output for the logs.
 // Here we can add additional information (such the function the log is in)
 // or styling, such as coloration
-func (lt LoggerConfig) Writer(p []byte) (n int, err error) {
+func (output Output) ConsoleColorWriter(p []byte) (n int, err error) {
 
 // NOTE:
 // THIS CURRENTLY ONLY IS DOING STDOUT!!
@@ -50,4 +45,12 @@ func (lt LoggerConfig) Writer(p []byte) (n int, err error) {
 				lt.color.Print(str)
 		}
 		return len(p), nil
+}
+
+func (output *Output) SetFilters(filters []Filters){
+	//set filters only for this Output
+}
+
+func (log *LoggerConfig) SetFilters(filters []Filters){
+	//set filters for all Writers
 }

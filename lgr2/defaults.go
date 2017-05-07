@@ -9,6 +9,8 @@ import "github.com/fatih/color"
 // these are the numeric values used to define levels
 // the actual Loggers fall into these levels,
 // and are defined in their LoggerT s
+// these are the 8 logging levels listed in their intended order of urgency 
+// TRACE being for detailed reporting whereas FATAL is for _total_ failure
 const (
     // LevelTrace Excessive User Output
 	levelTrace Level = iota
@@ -31,19 +33,8 @@ const (
 	defaultFlags           = log.Ldate|log.Ltime|log.Lshortfile
 )
 
-// LOG LEVELS
-// these are the 8 logging levels listed in their intended order of urgency 
-// TRACE being for detailed reporting whereas FATAL is for _total_ failure
+// local defaults
 var (
-	TRACE *log.Logger
-	DEBUG *log.Logger
-	INFO *log.Logger
-	MSG *log.Logger
-	WARN *log.Logger
-	ERROR *log.Logger
-	CRITICAL *log.Logger
-	FATAL *log.Logger
-
 	// don't export these, they should be set 
 	logThreshold    Level    = defaultLogThreshold
 	outputThreshold Level    = defaultStdoutThreshold
@@ -62,97 +53,90 @@ var (
 
 )
 
-var defaultLog = Log{
-	TRACE: &LoggerT{
+//default logset
+var (
+	TRACE = &LoggerT{
         Level: levelTrace, 
         Name:   "TRACE",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgCyan),
         printDebug: true,
-        Logger: &TRACE,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	DEBUG: &LoggerT{
+    }
+	DEBUG = &LoggerT{
         Level: levelDebug, 
         Name:   "DEBUG",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgMagenta),
         printDebug: true,
-        Logger: &DEBUG,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	INFO: &LoggerT{
+    }
+	INFO = &LoggerT{
         Level: levelInfo, 
         Name:   "INFO",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgBlue),
         printDebug: false,
-        Logger: &INFO,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	MSG: &LoggerT{
+    }
+	MSG = &LoggerT{
         Level: levelMsg, 
         Name:   "MSG",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgWhite),
         printDebug: false,
-        Logger: &MSG,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	WARN: &LoggerT{
+    }
+	WARN = &LoggerT{
         Level: levelWarn,
         Name:   "WARN",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgYellow).Add(color.Underline),
         printDebug: true,
-        Logger: &WARN,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	ERROR: &LoggerT{
+    }
+	ERROR = &LoggerT{
         Level: levelError,
         Name:   "ERROR",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgRed),
         printDebug: true,
-        Logger: &ERROR,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	CRITICAL: &LoggerT{
+    }
+	CRITICAL = &LoggerT{
         Level: levelCritical,
         Name:   "CRITICAL",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgRed).Add(color.Underline),
         printDebug: true,
-        Logger: &CRITICAL,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-	FATAL: &LoggerT{
+    }
+	FATAL = &LoggerT{
         Level: levelFatal,
         Name:   "FATAL",
 		PrefixName: defaultPrefixName,
         Prefix: defaultPrefix,
         color:  color.New(color.FgRed).Add(color.Underline).Add(color.Bold),
         printDebug: true,
-        Logger: &FATAL,
         Flags: defaultFlags,
         Outputs: defaultOutputs,
-    },
-}
+    }
+)
 
 func init(){
-	NewLogger(defaultLog)
+	NewLogger(TRACE,DEBUG,INFO,MSG,WARN,ERROR,CRITICAL,FATAL)
 }

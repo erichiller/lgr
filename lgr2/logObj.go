@@ -11,12 +11,12 @@ type LogI interface {
 }
 
 type LoggerT struct {
+	*log.Logger
 	Level            Level
 	Name             string
 	Prefix           PrefixList
 	PrefixName       bool
 	Writer           *io.Writer				// Writer is a pointer to a Writer that already exists in Output .Writer
-	Logger           **log.Logger
 	color            *color.Color
 	printDebug       bool					// this is for internal debugging of lgr.
 	Flags            int
@@ -37,27 +37,29 @@ type Filter struct {
 type Log map[*log.Logger]*LoggerT
 
 
-func NewLog(log Log){
+func NewLog(log ...LogT){
 	for _, n := range log {
-			
-		// if the log level is less than the outputThreshold (stdout)
-		// and less than LoggerThreshold (file output)
-		// than don't log anything
-		if n.Level < outputThreshold && n.Level < LoggerThreshold {
-			n.Handle = ioutil.Discard
-		} else if n.Level >= outputThreshold && n.Level >= LoggerThreshold {
-			// if greater than or equal to both, log to both
-			n.Handle = io.MultiWriter(FileHandle, n)
-		} else if n.Level >= outputThreshold && n.Level < LoggerThreshold {
-			// if only outputThreshold is greater, only log to console
-			n.Handle = n
-		} else {
-			// else (the only option remaining is LoggerThreshold is greater)
-			// log to FileLogger only
-			n.Handle = FileHandle
-		}
 
-		*n.Logger = log.New(n.Handle, n.Prefix, n.Flags)
+		for _, output := range n.Outputs {
+			// if the log level is less then the outputThreshold (stdout)
+			// and less than LoggerThreshold (file output)
+			// then don't log anything
+			if n.Level < outputThreshold && n.Level < LoggerThreshold {
+				n.Handle = ioutil.Discard
+			} else if n.Level >= outputThreshold && n.Level >= LoggerThreshold {
+				// if greater than or equal to both, log to both
+				n.Handle = io.MultiWriter(FileHandle, n)
+			} else if n.Level >= outputThreshold && n.Level < LoggerThreshold {
+				// if only outputThreshold is greater, only log to console
+				n.Handle = n
+			} else {
+				// else (the only option remaining is LoggerThreshold is greater)
+				// log to FileLogger only
+				n.Handle = FileHandle
+			}
+
+			*n.Logger = log.New(n.Handle, n.Prefix, n.Flags)
+		}
 	}
 }
 		
